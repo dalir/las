@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"os"
 )
 
@@ -34,6 +35,21 @@ func (v *VLR) read(file *os.File, offsetIn int64) (offsetOut int64, err error) {
 	if err != nil {
 		return
 	}
+	crs, err := v.getCRSFormat()
+	if err != nil {
+		return
+	}
+	crs.read(v.record)
 	offsetOut = offsetToRecord + int64(v.header.RecordLengthAfterHeader)
+	return
+}
+
+func (v *VLR) getCRSFormat() (crs CRS, err error) {
+	switch v.header.RecordID {
+	case 34735:
+		crs = &GeoKeyDirectoryTag{}
+	default:
+		err = fmt.Errorf("CRS format not defined")
+	}
 	return
 }
