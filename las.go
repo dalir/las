@@ -23,7 +23,7 @@ const LAS_FILE_SIGNATURE = "LASF"
 type Las struct {
 	header PublicHeaderBlock
 	vlrs   []VLR
-	pdrs   []PDR
+	pdrs   PDRs
 	evlrs  []EVLR
 }
 
@@ -113,34 +113,6 @@ func (l *Las) readVLRs(file *os.File) (err error) {
 	return
 }
 
-func (l *Las) getPDRStruct() (pdr PDR) {
-	switch l.header.PointDataRecordFormat {
-	case 0:
-		pdr = &PDR0{}
-	case 1:
-		pdr = &PDR1{}
-	case 2:
-		pdr = &PDR2{}
-	case 3:
-		pdr = &PDR3{}
-	case 4:
-		pdr = &PDR4{}
-	case 5:
-		pdr = &PDR5{}
-	case 6:
-		pdr = &PDR6{}
-	case 7:
-		pdr = &PDR7{}
-	case 8:
-		pdr = &PDR8{}
-	case 9:
-		pdr = &PDR9{}
-	case 10:
-		pdr = &PDR10{}
-	}
-	return
-}
-
 func (l *Las) getNumberOfPDRs() (numberOFPDRs uint64) {
 	version := l.header.GetVersion()
 	if version == V1_4 {
@@ -152,15 +124,36 @@ func (l *Las) getNumberOfPDRs() (numberOFPDRs uint64) {
 }
 
 func (l *Las) readPDRs(file *os.File) (err error) {
-	offset := int64(l.header.OffsetToPointData)
 	numOfPDRs := l.getNumberOfPDRs()
-	for i := uint64(0); i < numOfPDRs; i++ {
-		pdr := l.getPDRStruct()
-		offset, err = pdr.read(file, offset)
-		if err != nil {
-			return
-		}
-		l.pdrs = append(l.pdrs, pdr)
+	switch l.header.PointDataRecordFormat {
+	case 0:
+		l.pdrs = make(PDR0s, numOfPDRs)
+	case 1:
+		l.pdrs = make(PDR1s, numOfPDRs)
+	case 2:
+		l.pdrs = make(PDR2s, numOfPDRs)
+	case 3:
+		l.pdrs = make(PDR3s, numOfPDRs)
+	case 4:
+		l.pdrs = make(PDR4s, numOfPDRs)
+	case 5:
+		l.pdrs = make(PDR5s, numOfPDRs)
+	case 6:
+		l.pdrs = make(PDR6s, numOfPDRs)
+	case 7:
+		l.pdrs = make(PDR7s, numOfPDRs)
+	case 8:
+		l.pdrs = make(PDR8s, numOfPDRs)
+	case 9:
+		l.pdrs = make(PDR9s, numOfPDRs)
+	case 10:
+		l.pdrs = make(PDR10s, numOfPDRs)
+	default:
+		err = fmt.Errorf("point data record format not recognised")
+		return
+	}
+	if err = l.pdrs.read(file, int64(l.header.OffsetToPointData)); err != nil {
+		return
 	}
 	return
 }
@@ -196,10 +189,9 @@ func (l *Las) Las2txt(outputFile string) (err error) {
 	}
 	defer file.Close()
 
-	var csvList []XYZRGB
+	csvList := l.pdrs.GetCSVList()
 
-	for _, pdr := range l.pdrs {
-		csvOutput := pdr.GetXYZRGB()
+	for _, csvOutput := range csvList {
 
 		csvOutput.X = math.Round((l.header.XOffset+csvOutput.X*l.header.XScaleFactor)*1000) / 1000
 		csvOutput.Y = math.Round((l.header.YOffset+csvOutput.Y*l.header.YScaleFactor)*1000) / 1000
@@ -208,9 +200,8 @@ func (l *Las) Las2txt(outputFile string) (err error) {
 		csvOutput.R >>= 8
 		csvOutput.G >>= 8
 		csvOutput.B >>= 8
-
-		csvList = append(csvList, csvOutput)
 	}
+
 	if err = gocsv.MarshalWithoutHeaders(csvList, file); err != nil {
 		return
 	}

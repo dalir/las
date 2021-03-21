@@ -35,11 +35,11 @@ func (v *VLR) read(file *os.File, offsetIn int64) (offsetOut int64, err error) {
 	if err != nil {
 		return
 	}
-	crs, err := v.getCRSFormat()
-	if err != nil {
-		return
-	}
-	crs.read(v.record)
+	//crs, err := v.getCRSFormat()
+	//if err != nil {
+	//	return
+	//}
+	//crs.read(v.record)
 	offsetOut = offsetToRecord + int64(v.header.RecordLengthAfterHeader)
 	return
 }
