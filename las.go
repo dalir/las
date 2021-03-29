@@ -197,9 +197,11 @@ func (l *Las) Las2txt(outputFile string) (err error) {
 		csvOutput.Y = math.Round((l.header.YOffset+csvOutput.Y*l.header.YScaleFactor)*1000) / 1000
 		csvOutput.Z = math.Round((l.header.ZOffset+csvOutput.Z*l.header.ZScaleFactor)*1000) / 1000
 
-		csvOutput.R >>= 8
-		csvOutput.G >>= 8
-		csvOutput.B >>= 8
+		if (csvOutput.R|csvOutput.G|csvOutput.B)&0xFF00 == csvOutput.R|csvOutput.G|csvOutput.B { // Checking the 8 bit channel vs 16 bit
+			csvOutput.R >>= 8
+			csvOutput.G >>= 8
+			csvOutput.B >>= 8
+		}
 	}
 
 	if err = gocsv.MarshalWithoutHeaders(csvList, file); err != nil {

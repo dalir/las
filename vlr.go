@@ -17,7 +17,7 @@ type VLRHeader struct {
 
 type VLR struct {
 	header VLRHeader
-	record []byte
+	record []CRS
 }
 
 func (v *VLR) read(file *os.File, offsetIn int64) (offsetOut int64, err error) {
@@ -29,27 +29,40 @@ func (v *VLR) read(file *os.File, offsetIn int64) (offsetOut int64, err error) {
 	if err = binary.Read(bytes.NewReader(headerInBytes), binary.LittleEndian, &v.header); err != nil {
 		return
 	}
-	v.record = make([]byte, v.header.RecordLengthAfterHeader)
+	bytesInRecord := make([]byte, v.header.RecordLengthAfterHeader)
 	offsetToRecord := offsetIn + int64(binary.Size(VLRHeader{}))
-	_, err = file.ReadAt(v.record, offsetToRecord)
+	crs, err := v.getCRSFormat()
 	if err != nil {
 		return
 	}
-	//crs, err := v.getCRSFormat()
-	//if err != nil {
-	//	return
-	//}
-	//crs.read(v.record)
+	_, err = file.ReadAt(bytesInRecord, offsetToRecord)
+	if err != nil {
+		return
+	}
+	crs.read(bytesInRecord, offsetToRecord)
+	v.record = append(v.record, crs)
 	offsetOut = offsetToRecord + int64(v.header.RecordLengthAfterHeader)
 	return
 }
 
 func (v *VLR) getCRSFormat() (crs CRS, err error) {
-	switch v.header.RecordID {
-	case 34735:
-		crs = &GeoKeyDirectoryTag{}
-	default:
-		err = fmt.Errorf("CRS format not defined")
+	if string(v.header.UserID[:]) == "LASF_Projection" {
+		switch v.header.RecordID {
+		case 34735:
+			crs = &GeoKeyDirectoryTag{}
+		case 34736:
+			crs = &GeoDoubleParamsTag{}
+		case 34737:
+			crs = &GeoAsciiParamsTag{}
+		case 2111:
+			crs = &MathTransformWKT{}
+		case 2112:
+			crs = &CoordinateSystemWKT{}
+		default:
+			err = fmt.Errorf("CRS format not defined")
+		}
+	} else if string(v.header.UserID[:]) == "LASF_Spec" {
+
 	}
 	return
 }
