@@ -152,7 +152,7 @@ func (l *Las) readPDRs(file *os.File) (err error) {
 		err = fmt.Errorf("point data record format not recognised")
 		return
 	}
-	if err = l.pdrs.read(file, int64(l.header.OffsetToPointData)); err != nil {
+	if err = l.pdrs.read(file, int64(l.header.OffsetToPointData), uint64(l.header.PointDataRecordLength)); err != nil {
 		return
 	}
 	return
