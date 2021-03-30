@@ -143,3 +143,89 @@ func (c *CoordinateSystemWKT) read(record []byte, offset int64) (err error) {
 	}
 	return
 }
+
+//   _____ _               _  __ _           _   _               _                 _
+//  / ____| |             (_)/ _(_)         | | (_)             | |               | |
+// | |    | | __ _ ___ ___ _| |_ _  ___ __ _| |_ _  ___  _ __   | |     ___   ___ | | ___   _ _ __
+// | |    | |/ _` / __/ __| |  _| |/ __/ _` | __| |/ _ \| '_ \  | |    / _ \ / _ \| |/ / | | | '_ \
+// | |____| | (_| \__ \__ \ | | | | (_| (_| | |_| | (_) | | | | | |___| (_) | (_) |   <| |_| | |_) |
+//  \_____|_|\__,_|___/___/_|_| |_|\___\__,_|\__|_|\___/|_| |_| |______\___/ \___/|_|\_\\__,_| .__/
+//                                                                                           | |
+//                                                                                           |_|
+
+type ClassificationLookup [256]Classification
+
+type Classification struct {
+	ClassNumber uint8
+	Description [15]byte
+}
+
+func (c ClassificationLookup) read(record []byte, offset int64) (err error) {
+	if err = binary.Read(bytes.NewReader(record), binary.LittleEndian, &c); err != nil {
+		return
+	}
+	return
+}
+
+//  _______        _                               _____                      _       _   _
+// |__   __|      | |       /\                    |  __ \                    (_)     | | (_)
+//    | | _____  _| |_     /  \   _ __ ___  __ _  | |  | | ___  ___  ___ _ __ _ _ __ | |_ _  ___  _ __
+//    | |/ _ \ \/ / __|   / /\ \ | '__/ _ \/ _` | | |  | |/ _ \/ __|/ __| '__| | '_ \| __| |/ _ \| '_ \
+//    | |  __/>  <| |_   / ____ \| | |  __/ (_| | | |__| |  __/\__ \ (__| |  | | |_) | |_| | (_) | | | |
+//    |_|\___/_/\_\\__| /_/    \_\_|  \___|\__,_| |_____/ \___||___/\___|_|  |_| .__/ \__|_|\___/|_| |_|
+//                                                                             | |
+//                                                                             |_|
+
+type TextAreaDescription []string
+
+func (t *TextAreaDescription) read(record []byte, offset int64) (err error) {
+	chunks := bytes.Split(record, []byte("\x00"))
+	for _, chunk := range chunks {
+		if len(chunk) != 0 {
+			*t = append(*t, string(chunk))
+		}
+	}
+	return
+}
+
+//  ______      _               ____        _
+// |  ____|    | |             |  _ \      | |
+// | |__  __  _| |_ _ __ __ _  | |_) |_   _| |_ ___  ___
+// |  __| \ \/ / __| '__/ _` | |  _ <| | | | __/ _ \/ __|
+// | |____ >  <| |_| | | (_| | | |_) | |_| | ||  __/\__ \
+// |______/_/\_\\__|_|  \__,_| |____/ \__, |\__\___||___/
+//                                     __/ |
+//                                    |___/
+
+type ExtraBytes []ExtraBytesDescriptor
+
+type ExtraBytesDescriptor struct {
+	reserved    [2]uint8
+	dataType    uint8
+	options     uint8
+	name        [32]byte
+	unused      [4]uint8
+	noData      [8]byte
+	deprecated1 [16]uint8
+	min         [8]byte
+	deprecated2 [16]uint8
+	max         [8]byte
+	deprecated3 [16]uint8
+	scale       float64
+	deprecated4 [16]uint8
+	offset      float64
+	deprecated5 [16]uint8
+	description [32]byte
+}
+
+func (e *ExtraBytes) read(record []byte, offset int64) (err error) {
+	sizeOfDescriptor := int64(binary.Size(ExtraBytesDescriptor{}))
+	for recordLocation := offset; recordLocation < int64(len(record))+offset; recordLocation += sizeOfDescriptor {
+		value := ExtraBytesDescriptor{}
+		if err = binary.Read(bytes.NewReader(record[recordLocation:recordLocation+sizeOfDescriptor]), binary.LittleEndian, &value); err != nil {
+			return
+		}
+		*e = append(*e, value)
+	}
+	return
+}
