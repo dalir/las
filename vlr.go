@@ -15,6 +15,18 @@ type VLRHeader struct {
 	Description             [32]byte
 }
 
+func (vh *VLRHeader) getUserID() (userID string, err error) {
+	chunks := bytes.Split(vh.UserID[:], []byte("\x00"))
+	for _, chunk := range chunks {
+		if len(chunk) != 0 {
+			userID = string(chunk)
+			return
+		}
+	}
+	err = fmt.Errorf("userID is not set on VLR header")
+	return
+}
+
 type VLR struct {
 	header VLRHeader
 	record []CRS
@@ -46,7 +58,11 @@ func (v *VLR) read(file *os.File, offsetIn int64) (offsetOut int64, err error) {
 }
 
 func (v *VLR) getCRSFormat() (crs CRS, err error) {
-	if string(v.header.UserID[:]) == "LASF_Projection" {
+	userID, err := v.header.getUserID()
+	if err != nil {
+		return
+	}
+	if userID == "LASF_Projection" {
 		switch v.header.RecordID {
 		case 34735:
 			crs = &GeoKeyDirectoryTag{}
@@ -59,10 +75,29 @@ func (v *VLR) getCRSFormat() (crs CRS, err error) {
 		case 2112:
 			crs = &CoordinateSystemWKT{}
 		default:
-			err = fmt.Errorf("CRS format not defined")
+			err = fmt.Errorf("CRS format not defined for LASF Projection")
 		}
-	} else if string(v.header.UserID[:]) == "LASF_Spec" {
+	} else if userID == "LASF_Spec" {
+		switch v.header.RecordID {
+		case 0:
+			crs = &ClassificationLookup{}
+		case 3:
+			crs = &TextAreaDescription{}
+		case 4:
+			crs = &ExtraBytes{}
+		default:
+			err = fmt.Errorf("CRS format not defined for LASF Spec")
+		}
 
+	} else if userID == "liblas" {
+		switch v.header.RecordID {
+		case 2112:
+			crs = &MathTransformWKT{}
+		default:
+			err = fmt.Errorf("CRS format not defined for liblas")
+		}
+	} else {
+		err = fmt.Errorf("CRS format with userid %s not defined", userID)
 	}
 	return
 }
