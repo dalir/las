@@ -14,6 +14,7 @@ import (
 // |_|    |_____/|_|  \_\
 //
 //
+
 type PDRs interface {
 	read(file *os.File, offsetIn int64, dataLength uint64) (err error)
 	GetCSVList() (output []*XYZRGB)
@@ -83,20 +84,20 @@ type PDR0 struct {
 	ExtraBytes []byte
 }
 
-func (p0 *PDR0) GetReturnNumber() uint8 {
-	return p0.Pulse & PDR0_RETURN_NUMBER_MASK
+func (f0 *Format0) GetReturnNumber() uint8 {
+	return f0.Pulse & PDR0_RETURN_NUMBER_MASK
 }
 
-func (p0 *PDR0) GetNumberOfReturns() uint8 {
-	return (p0.Pulse & PDR0_NUMBER_OF_RETURNS_MASK) >> 3
+func (f0 *Format0) GetNumberOfReturns() uint8 {
+	return (f0.Pulse & PDR0_NUMBER_OF_RETURNS_MASK) >> 3
 }
 
-func (p0 *PDR0) GetScanDirectionFlag() uint8 {
-	return (p0.Pulse & PDR0_SCAN_DIRECTION_FLAG_MASK) >> 6
+func (f0 *Format0) GetScanDirectionFlag() uint8 {
+	return (f0.Pulse & PDR0_SCAN_DIRECTION_FLAG_MASK) >> 6
 }
 
-func (p0 *PDR0) GetEdgeOfFlightLine() uint8 {
-	return (p0.Pulse & PDR0_EDGE_OF_FLIGHT_LINE_MASK) >> 7
+func (f0 *Format0) GetEdgeOfFlightLine() uint8 {
+	return (f0.Pulse & PDR0_EDGE_OF_FLIGHT_LINE_MASK) >> 7
 }
 
 type PDR0s []PDR0
@@ -479,24 +480,24 @@ type PDR6 struct {
 	ExtraBytes []byte
 }
 
-func (p6 *PDR6) GetReturnNumber() uint8 {
-	return p6.PulseReturns & PDR6_RETURN_NUMBER_MASK
+func (f6 *Format6) GetReturnNumber() uint8 {
+	return f6.PulseReturns & PDR6_RETURN_NUMBER_MASK
 }
 
-func (p6 *PDR6) GetNumberOfReturns() uint8 {
-	return (p6.PulseReturns & PDR6_NUMBER_OF_RETURNS_MASK) >> 4
+func (f6 *Format6) GetNumberOfReturns() uint8 {
+	return (f6.PulseReturns & PDR6_NUMBER_OF_RETURNS_MASK) >> 4
 }
 
-func (p6 *PDR6) GetClassificationFlag() uint8 {
-	return p6.PulseFlags & PDR6_CLASSIFICATION_FLAGS_MASK
+func (f6 *Format6) GetClassificationFlag() uint8 {
+	return f6.PulseFlags & PDR6_CLASSIFICATION_FLAGS_MASK
 }
 
-func (p6 *PDR6) GetScanDirectionFlag() uint8 {
-	return (p6.PulseFlags & PDR6_SCAN_DIRECTION_FLAG_MASK) >> 4
+func (f6 *Format6) GetScanDirectionFlag() uint8 {
+	return (f6.PulseFlags & PDR6_SCAN_DIRECTION_FLAG_MASK) >> 4
 }
 
-func (p6 *PDR6) GetEdgeOfFlightLine() uint8 {
-	return (p6.PulseFlags & PDR6_EDGE_OF_FLIGHT_LINE_MASK) >> 2
+func (f6 *Format6) GetEdgeOfFlightLine() uint8 {
+	return (f6.PulseFlags & PDR6_EDGE_OF_FLIGHT_LINE_MASK) >> 2
 }
 
 type PDR6s []PDR6
