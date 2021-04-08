@@ -44,6 +44,28 @@ const (
 	PDR0_EDGE_OF_FLIGHT_LINE_MASK = 0x80
 )
 
+const (
+	Created_NeverClassified ClassAttribute = iota
+	Uncalassified
+	Ground
+	Low_Vegetation
+	Medium_Vegetation
+	High_Vegetation
+	Building
+	Low_Point
+	Model_Key_Point
+	Water
+	Reserved10
+	Reserved11
+	Overlap_Points
+)
+
+type ClassAttribute uint8
+
+func (ca ClassAttribute) getValue(value ClassAttribute) {
+	value = ClassAttribute(uint8(ca) & 0x0F)
+}
+
 type Format0 struct {
 	X              int32
 	Y              int32
@@ -57,24 +79,24 @@ type Format0 struct {
 }
 
 type PDR0 struct {
-	F0         Format0
+	Format0
 	ExtraBytes []byte
 }
 
 func (p0 *PDR0) GetReturnNumber() uint8 {
-	return p0.F0.Pulse & PDR0_RETURN_NUMBER_MASK
+	return p0.Pulse & PDR0_RETURN_NUMBER_MASK
 }
 
 func (p0 *PDR0) GetNumberOfReturns() uint8 {
-	return (p0.F0.Pulse & PDR0_NUMBER_OF_RETURNS_MASK) >> 3
+	return (p0.Pulse & PDR0_NUMBER_OF_RETURNS_MASK) >> 3
 }
 
 func (p0 *PDR0) GetScanDirectionFlag() uint8 {
-	return (p0.F0.Pulse & PDR0_SCAN_DIRECTION_FLAG_MASK) >> 6
+	return (p0.Pulse & PDR0_SCAN_DIRECTION_FLAG_MASK) >> 6
 }
 
 func (p0 *PDR0) GetEdgeOfFlightLine() uint8 {
-	return (p0.F0.Pulse & PDR0_EDGE_OF_FLIGHT_LINE_MASK) >> 7
+	return (p0.Pulse & PDR0_EDGE_OF_FLIGHT_LINE_MASK) >> 7
 }
 
 type PDR0s []PDR0
@@ -88,7 +110,7 @@ func (p0 PDR0s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 	for index := range p0 {
 		pdrSize := uint64(binary.Size(Format0{}))
 		offset := uint64(index) * dataLength
-		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p0[index].F0); err != nil {
+		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p0[index].Format0); err != nil {
 			return
 		}
 		if dataLength-pdrSize != 0 {
@@ -104,9 +126,9 @@ func (p0 PDR0s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 func (p0 PDR0s) GetCSVList() (output []*XYZRGB) {
 	for _, p := range p0 {
 		csvRow := &XYZRGB{
-			X: float64(p.F0.X),
-			Y: float64(p.F0.Y),
-			Z: float64(p.F0.Z),
+			X: float64(p.X),
+			Y: float64(p.Y),
+			Z: float64(p.Z),
 			R: 0,
 			G: 0,
 			B: 0,
@@ -126,12 +148,12 @@ func (p0 PDR0s) GetCSVList() (output []*XYZRGB) {
 //
 
 type Format1 struct {
-	F0      Format0
+	Format0
 	GPSTime float64
 }
 
 type PDR1 struct {
-	F1         Format1
+	Format1
 	ExtraBytes []byte
 }
 
@@ -146,7 +168,7 @@ func (p1 PDR1s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 	for index := range p1 {
 		pdrSize := uint64(binary.Size(Format1{}))
 		offset := uint64(index) * dataLength
-		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p1[index].F1); err != nil {
+		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p1[index].Format1); err != nil {
 			return
 		}
 		if dataLength-pdrSize != 0 {
@@ -162,9 +184,9 @@ func (p1 PDR1s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 func (p1 PDR1s) GetCSVList() (output []*XYZRGB) {
 	for _, p := range p1 {
 		csvRow := &XYZRGB{
-			X: float64(p.F1.F0.X),
-			Y: float64(p.F1.F0.Y),
-			Z: float64(p.F1.F0.Z),
+			X: float64(p.X),
+			Y: float64(p.Y),
+			Z: float64(p.Z),
 			R: 0,
 			G: 0,
 			B: 0,
@@ -184,14 +206,14 @@ func (p1 PDR1s) GetCSVList() (output []*XYZRGB) {
 //
 
 type Format2 struct {
-	F0    Format0
+	Format0
 	Red   uint16
 	Green uint16
 	Blue  uint16
 }
 
 type PDR2 struct {
-	F2         Format2
+	Format2
 	ExtraBytes []byte
 }
 
@@ -206,7 +228,7 @@ func (p2 PDR2s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 	for index := range p2 {
 		pdrSize := uint64(binary.Size(Format2{}))
 		offset := uint64(index) * dataLength
-		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p2[index].F2); err != nil {
+		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p2[index].Format2); err != nil {
 			return
 		}
 		if dataLength-pdrSize != 0 {
@@ -222,12 +244,12 @@ func (p2 PDR2s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 func (p2 PDR2s) GetCSVList() (output []*XYZRGB) {
 	for _, p := range p2 {
 		csvRow := &XYZRGB{
-			X: float64(p.F2.F0.X),
-			Y: float64(p.F2.F0.Y),
-			Z: float64(p.F2.F0.Z),
-			R: p.F2.Red,
-			G: p.F2.Green,
-			B: p.F2.Blue,
+			X: float64(p.X),
+			Y: float64(p.Y),
+			Z: float64(p.Z),
+			R: p.Red,
+			G: p.Green,
+			B: p.Blue,
 		}
 		output = append(output, csvRow)
 	}
@@ -244,14 +266,14 @@ func (p2 PDR2s) GetCSVList() (output []*XYZRGB) {
 //
 
 type Format3 struct {
-	F1    Format1
+	Format1
 	Red   uint16
 	Green uint16
 	Blue  uint16
 }
 
 type PDR3 struct {
-	F3         Format3
+	Format3
 	ExtraBytes []byte
 }
 
@@ -266,7 +288,7 @@ func (p3 PDR3s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 	for index := range p3 {
 		pdrSize := uint64(binary.Size(Format3{}))
 		offset := uint64(index) * dataLength
-		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p3[index].F3); err != nil {
+		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p3[index].Format3); err != nil {
 			return
 		}
 		if dataLength-pdrSize != 0 {
@@ -282,12 +304,12 @@ func (p3 PDR3s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 func (p3 PDR3s) GetCSVList() (output []*XYZRGB) {
 	for _, p := range p3 {
 		csvRow := &XYZRGB{
-			X: float64(p.F3.F1.F0.X),
-			Y: float64(p.F3.F1.F0.Y),
-			Z: float64(p.F3.F1.F0.Z),
-			R: p.F3.Red,
-			G: p.F3.Green,
-			B: p.F3.Blue,
+			X: float64(p.X),
+			Y: float64(p.Y),
+			Z: float64(p.Z),
+			R: p.Red,
+			G: p.Green,
+			B: p.Blue,
 		}
 		output = append(output, csvRow)
 	}
@@ -303,7 +325,7 @@ func (p3 PDR3s) GetCSVList() (output []*XYZRGB) {
 //
 
 type Format4 struct {
-	F1                          Format1
+	Format1
 	WavePacketDescriptorIndex   uint8
 	ByteOffsetToWaveformData    uint64
 	WaveformPacketSizeInBytes   uint32
@@ -314,7 +336,7 @@ type Format4 struct {
 }
 
 type PDR4 struct {
-	F4         Format4
+	Format4
 	ExtraBytes []byte
 }
 
@@ -329,7 +351,7 @@ func (p4 PDR4s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 	for index := range p4 {
 		pdrSize := uint64(binary.Size(Format4{}))
 		offset := uint64(index) * dataLength
-		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p4[index].F4); err != nil {
+		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p4[index].Format4); err != nil {
 			return
 		}
 		if dataLength-pdrSize != 0 {
@@ -345,9 +367,9 @@ func (p4 PDR4s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 func (p4 PDR4s) GetCSVList() (output []*XYZRGB) {
 	for _, p := range p4 {
 		csvRow := &XYZRGB{
-			X: float64(p.F4.F1.F0.X),
-			Y: float64(p.F4.F1.F0.Y),
-			Z: float64(p.F4.F1.F0.Z),
+			X: float64(p.X),
+			Y: float64(p.Y),
+			Z: float64(p.Z),
 			R: 0,
 			G: 0,
 			B: 0,
@@ -367,7 +389,7 @@ func (p4 PDR4s) GetCSVList() (output []*XYZRGB) {
 //
 
 type Format5 struct {
-	F3                          Format3
+	Format3
 	WavePacketDescriptorIndex   uint8
 	ByteOffsetToWaveformData    uint64
 	WaveformPacketSizeInBytes   uint32
@@ -378,7 +400,7 @@ type Format5 struct {
 }
 
 type PDR5 struct {
-	F5         Format5
+	Format5
 	ExtraBytes []byte
 }
 
@@ -393,7 +415,7 @@ func (p5 PDR5s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 	for index := range p5 {
 		pdrSize := uint64(binary.Size(Format5{}))
 		offset := uint64(index) * dataLength
-		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p5[index].F5); err != nil {
+		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p5[index].Format5); err != nil {
 			return
 		}
 		if dataLength-pdrSize != 0 {
@@ -409,12 +431,12 @@ func (p5 PDR5s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 func (p5 PDR5s) GetCSVList() (output []*XYZRGB) {
 	for _, p := range p5 {
 		csvRow := &XYZRGB{
-			X: float64(p.F5.F3.F1.F0.X),
-			Y: float64(p.F5.F3.F1.F0.Y),
-			Z: float64(p.F5.F3.F1.F0.Z),
-			R: p.F5.F3.Red,
-			G: p.F5.F3.Green,
-			B: p.F5.F3.Blue,
+			X: float64(p.X),
+			Y: float64(p.Y),
+			Z: float64(p.Z),
+			R: p.Red,
+			G: p.Green,
+			B: p.Blue,
 		}
 		output = append(output, csvRow)
 	}
@@ -453,28 +475,28 @@ type Format6 struct {
 }
 
 type PDR6 struct {
-	F6         Format6
+	Format6
 	ExtraBytes []byte
 }
 
 func (p6 *PDR6) GetReturnNumber() uint8 {
-	return p6.F6.PulseReturns & PDR6_RETURN_NUMBER_MASK
+	return p6.PulseReturns & PDR6_RETURN_NUMBER_MASK
 }
 
 func (p6 *PDR6) GetNumberOfReturns() uint8 {
-	return (p6.F6.PulseReturns & PDR6_NUMBER_OF_RETURNS_MASK) >> 4
+	return (p6.PulseReturns & PDR6_NUMBER_OF_RETURNS_MASK) >> 4
 }
 
 func (p6 *PDR6) GetClassificationFlag() uint8 {
-	return p6.F6.PulseFlags & PDR6_CLASSIFICATION_FLAGS_MASK
+	return p6.PulseFlags & PDR6_CLASSIFICATION_FLAGS_MASK
 }
 
 func (p6 *PDR6) GetScanDirectionFlag() uint8 {
-	return (p6.F6.PulseFlags & PDR6_SCAN_DIRECTION_FLAG_MASK) >> 4
+	return (p6.PulseFlags & PDR6_SCAN_DIRECTION_FLAG_MASK) >> 4
 }
 
 func (p6 *PDR6) GetEdgeOfFlightLine() uint8 {
-	return (p6.F6.PulseFlags & PDR6_EDGE_OF_FLIGHT_LINE_MASK) >> 2
+	return (p6.PulseFlags & PDR6_EDGE_OF_FLIGHT_LINE_MASK) >> 2
 }
 
 type PDR6s []PDR6
@@ -488,7 +510,7 @@ func (p6 PDR6s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 	for index := range p6 {
 		pdrSize := uint64(binary.Size(Format6{}))
 		offset := uint64(index) * dataLength
-		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p6[index].F6); err != nil {
+		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p6[index].Format6); err != nil {
 			return
 		}
 		if dataLength-pdrSize != 0 {
@@ -504,9 +526,9 @@ func (p6 PDR6s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 func (p6 PDR6s) GetCSVList() (output []*XYZRGB) {
 	for _, p := range p6 {
 		csvRow := &XYZRGB{
-			X: float64(p.F6.X),
-			Y: float64(p.F6.Y),
-			Z: float64(p.F6.Z),
+			X: float64(p.X),
+			Y: float64(p.Y),
+			Z: float64(p.Z),
 			R: 0,
 			G: 0,
 			B: 0,
@@ -526,14 +548,14 @@ func (p6 PDR6s) GetCSVList() (output []*XYZRGB) {
 //
 
 type Format7 struct {
-	F6    Format6
+	Format6
 	Red   uint16
 	Green uint16
 	Blue  uint16
 }
 
 type PDR7 struct {
-	F7         Format7
+	Format7
 	ExtraBytes []byte
 }
 
@@ -548,7 +570,7 @@ func (p7 PDR7s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 	for index := range p7 {
 		pdrSize := uint64(binary.Size(Format7{}))
 		offset := uint64(index) * dataLength
-		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p7[index].F7); err != nil {
+		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p7[index].Format7); err != nil {
 			return
 		}
 		if dataLength-pdrSize != 0 {
@@ -564,12 +586,12 @@ func (p7 PDR7s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 func (p7 PDR7s) GetCSVList() (output []*XYZRGB) {
 	for _, p := range p7 {
 		csvRow := &XYZRGB{
-			X: float64(p.F7.F6.X),
-			Y: float64(p.F7.F6.Y),
-			Z: float64(p.F7.F6.Z),
-			R: p.F7.Red,
-			G: p.F7.Green,
-			B: p.F7.Blue,
+			X: float64(p.X),
+			Y: float64(p.Y),
+			Z: float64(p.Z),
+			R: p.Red,
+			G: p.Green,
+			B: p.Blue,
 		}
 		output = append(output, csvRow)
 	}
@@ -586,12 +608,12 @@ func (p7 PDR7s) GetCSVList() (output []*XYZRGB) {
 //
 
 type Format8 struct {
-	F7  Format7
+	Format7
 	NIR uint16
 }
 
 type PDR8 struct {
-	F8         Format8
+	Format8
 	ExtraBytes []byte
 }
 
@@ -606,7 +628,7 @@ func (p8 PDR8s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 	for index := range p8 {
 		pdrSize := uint64(binary.Size(Format8{}))
 		offset := uint64(index) * dataLength
-		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p8[index].F8); err != nil {
+		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p8[index].Format8); err != nil {
 			return
 		}
 		if dataLength-pdrSize != 0 {
@@ -622,12 +644,12 @@ func (p8 PDR8s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 func (p8 PDR8s) GetCSVList() (output []*XYZRGB) {
 	for _, p := range p8 {
 		csvRow := &XYZRGB{
-			X: float64(p.F8.F7.F6.X),
-			Y: float64(p.F8.F7.F6.Y),
-			Z: float64(p.F8.F7.F6.Z),
-			R: p.F8.F7.Red,
-			G: p.F8.F7.Green,
-			B: p.F8.F7.Blue,
+			X: float64(p.X),
+			Y: float64(p.Y),
+			Z: float64(p.Z),
+			R: p.Red,
+			G: p.Green,
+			B: p.Blue,
 		}
 		output = append(output, csvRow)
 	}
@@ -644,7 +666,7 @@ func (p8 PDR8s) GetCSVList() (output []*XYZRGB) {
 //
 
 type Format9 struct {
-	F6                          Format6
+	Format6
 	WavePacketDescriptorIndex   uint8
 	ByteOffsetToWaveformData    uint64
 	WaveformPacketSizeInBytes   uint32
@@ -655,7 +677,7 @@ type Format9 struct {
 }
 
 type PDR9 struct {
-	F9         Format9
+	Format9
 	ExtraBytes []byte
 }
 
@@ -670,7 +692,7 @@ func (p9 PDR9s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 	for index := range p9 {
 		pdrSize := uint64(binary.Size(Format9{}))
 		offset := uint64(index) * dataLength
-		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p9[index].F9); err != nil {
+		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p9[index].Format9); err != nil {
 			return
 		}
 		if dataLength-pdrSize != 0 {
@@ -686,9 +708,9 @@ func (p9 PDR9s) read(file *os.File, offsetIn int64, dataLength uint64) (err erro
 func (p9 PDR9s) GetCSVList() (output []*XYZRGB) {
 	for _, p := range p9 {
 		csvRow := &XYZRGB{
-			X: float64(p.F9.F6.X),
-			Y: float64(p.F9.F6.Y),
-			Z: float64(p.F9.F6.Z),
+			X: float64(p.X),
+			Y: float64(p.Y),
+			Z: float64(p.Z),
 			R: 0,
 			G: 0,
 			B: 0,
@@ -708,7 +730,7 @@ func (p9 PDR9s) GetCSVList() (output []*XYZRGB) {
 //
 
 type Format10 struct {
-	F8                          Format8
+	Format8
 	WavePacketDescriptorIndex   uint8
 	ByteOffsetToWaveformData    uint64
 	WaveformPacketSizeInBytes   uint32
@@ -719,7 +741,7 @@ type Format10 struct {
 }
 
 type PDR10 struct {
-	F10        Format10
+	Format10
 	ExtraBytes []byte
 }
 
@@ -734,7 +756,7 @@ func (p10 PDR10s) read(file *os.File, offsetIn int64, dataLength uint64) (err er
 	for index := range p10 {
 		pdrSize := uint64(binary.Size(Format10{}))
 		offset := uint64(index) * dataLength
-		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p10[index].F10); err != nil {
+		if err = binary.Read(bytes.NewReader(bytesToRead[offset:offset+pdrSize]), binary.LittleEndian, &p10[index].Format10); err != nil {
 			return
 		}
 		if dataLength-pdrSize != 0 {
@@ -750,12 +772,12 @@ func (p10 PDR10s) read(file *os.File, offsetIn int64, dataLength uint64) (err er
 func (p10 PDR10s) GetCSVList() (output []*XYZRGB) {
 	for _, p := range p10 {
 		csvRow := &XYZRGB{
-			X: float64(p.F10.F8.F7.F6.X),
-			Y: float64(p.F10.F8.F7.F6.Y),
-			Z: float64(p.F10.F8.F7.F6.Z),
-			R: p.F10.F8.F7.Red,
-			G: p.F10.F8.F7.Green,
-			B: p.F10.F8.F7.Blue,
+			X: float64(p.X),
+			Y: float64(p.Y),
+			Z: float64(p.Z),
+			R: p.Red,
+			G: p.Green,
+			B: p.Blue,
 		}
 		output = append(output, csvRow)
 	}
