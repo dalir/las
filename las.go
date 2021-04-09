@@ -88,11 +88,21 @@ func (l *Las) isVersionOK() (err error) {
 	return
 }
 
+func (l *Las) isFileCompressed() (compressed bool) {
+	compressed = false
+	if l.header.PointDataRecordFormat&0x80 == 0x80 {
+		compressed = true
+	}
+	return
+}
+
 func (l *Las) isFileLasFormat() (err error) {
 	fileSignature := string(l.header.FileSignature[:])
 	if fileSignature != LAS_FILE_SIGNATURE {
 		err = fmt.Errorf("las files signature is not %s. File Signature: %s", LAS_FILE_SIGNATURE, fileSignature)
-
+	}
+	if l.isFileCompressed() {
+		err = fmt.Errorf("file is compressed. Needs to be treated as laz format")
 	}
 	return
 }

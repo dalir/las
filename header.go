@@ -39,7 +39,7 @@ type PublicHeaderBlock struct {
 	HeaderSize                               uint16
 	OffsetToPointData                        uint32
 	NumberOfVLRs                             uint32
-	PointDataRecordFormat                    byte
+	PointDataRecordFormat                    uint8
 	PointDataRecordLength                    uint16
 	LegacyNumberOfPointRecords               uint32
 	LegacyNumberOfPointByReturn              [5]uint32
