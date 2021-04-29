@@ -469,8 +469,8 @@ type Format6 struct {
 	PulseReturns   uint8
 	PulseFlags     uint8
 	Classification uint8
-	ScanAngleRank  int8
 	UserData       uint8
+	ScanAngleRank  int16
 	PointSourceID  uint16
 	GPSTime        float64
 }
