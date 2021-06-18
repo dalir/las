@@ -67,15 +67,15 @@ func (g *GeoKeyDirectoryTag) read(record []byte, offset int64) (err error) {
 //                                                                                                __/ |
 //                                                                                               |___/
 
-type GeoDoubleParamsTag map[int64]float64
+type GeoDoubleParamsTag map[int]float64
 
 func (g GeoDoubleParamsTag) read(record []byte, offset int64) (err error) {
-	for recordLocation := offset; recordLocation < int64(len(record))+offset; recordLocation += 4 {
+	for index := 0; index < len(record); index += 8 {
 		var value float64
-		if err = binary.Read(bytes.NewReader(record[recordLocation:recordLocation+4]), binary.LittleEndian, &value); err != nil {
+		if err = binary.Read(bytes.NewReader(record[index:index+8]), binary.LittleEndian, &value); err != nil {
 			return
 		}
-		g[recordLocation] = value
+		g[index] = value
 	}
 	return
 }
