@@ -66,7 +66,13 @@ func (l *Las) readPHB(file *os.File) (err error) {
 
 	return
 }
-func (l *Las) WritePHB(file *os.File) (err error) {
+func (l *Las) WritePHB(filename string) (err error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
 	headerInBytes := make([]byte, binary.Size(PublicHeaderBlock{}))
 	_, err = file.WriteAt(headerInBytes, 0)
 	if err != nil {
