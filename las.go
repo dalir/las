@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/gocarina/gocsv"
-	"io"
 	"math"
 	"os"
 )
@@ -80,18 +79,16 @@ func (l *Las) readPHB(file *os.File) (err error) {
 
 	return
 }
-func (l *Las) WritePHB(filename string) (err error) {
-	file, err := os.Open(filename)
+
+func (l *Las) WriteHeader(filename string) (err error) {
+	file, err := os.OpenFile(filename, os.O_RDWR, 0644)
 	if err != nil {
 		return
 	}
 	defer file.Close()
 
 	headerInBytes := new(bytes.Buffer)
-
-	var w io.Writer
-	w.Write(headerInBytes.Bytes())
-	if err = binary.Write(w, binary.LittleEndian, &l.Header); err != nil {
+	if err = binary.Write(headerInBytes, binary.LittleEndian, &l.Header); err != nil {
 		return
 	}
 
