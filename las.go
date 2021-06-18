@@ -21,10 +21,10 @@ const LAS_FILE_SIGNATURE = "LASF"
 //
 
 type Las struct {
-	header PublicHeaderBlock
-	vlrs   []VLR
-	pdrs   PDRs
-	evlrs  []EVLR
+	Header PublicHeaderBlock
+	Vlrs   []VLR
+	Pdrs   PDRs
+	Evlrs  []EVLR
 }
 
 func (l *Las) Parse(filename string) (err error) {
@@ -55,7 +55,7 @@ func (l *Las) readPHB(file *os.File) (err error) {
 	if err != nil {
 		return
 	}
-	if err = binary.Read(bytes.NewReader(headerInBytes), binary.LittleEndian, &l.header); err != nil {
+	if err = binary.Read(bytes.NewReader(headerInBytes), binary.LittleEndian, &l.Header); err != nil {
 		return
 	}
 
@@ -78,7 +78,7 @@ func (l *Las) checkForCompliancy() (err error) {
 }
 
 func (l *Las) isVersionOK() (err error) {
-	fileVersion := l.header.GetVersion()
+	fileVersion := l.Header.GetVersion()
 	for _, knownVersion := range AllLasVersions {
 		if fileVersion == knownVersion {
 			return
@@ -90,14 +90,14 @@ func (l *Las) isVersionOK() (err error) {
 
 func (l *Las) isFileCompressed() (compressed bool) {
 	compressed = false
-	if l.header.PointDataRecordFormat&0x80 == 0x80 {
+	if l.Header.PointDataRecordFormat&0x80 == 0x80 {
 		compressed = true
 	}
 	return
 }
 
 func (l *Las) isFileLasFormat() (err error) {
-	fileSignature := string(l.header.FileSignature[:])
+	fileSignature := string(l.Header.FileSignature[:])
 	if fileSignature != LAS_FILE_SIGNATURE {
 		err = fmt.Errorf("las files signature is not %s. File Signature: %s", LAS_FILE_SIGNATURE, fileSignature)
 	}
@@ -108,70 +108,70 @@ func (l *Las) isFileLasFormat() (err error) {
 }
 
 func (l *Las) readVLRs(file *os.File) (err error) {
-	offset := int64(l.header.HeaderSize)
-	for i := uint32(0); i < l.header.NumberOfVLRs; i++ {
+	offset := int64(l.Header.HeaderSize)
+	for i := uint32(0); i < l.Header.NumberOfVLRs; i++ {
 		vlr := VLR{}
 		offset, err = vlr.read(file, offset)
 		if err != nil {
 			return
 		}
-		l.vlrs = append(l.vlrs, vlr)
+		l.Vlrs = append(l.Vlrs, vlr)
 	}
-	if uint32(offset) != l.header.OffsetToPointData {
-		err = fmt.Errorf("after reading VLRs offset : %d, doesn't match the offset set in public header: %d", offset, l.header.OffsetToPointData)
+	if uint32(offset) != l.Header.OffsetToPointData {
+		err = fmt.Errorf("after reading VLRs offset : %d, doesn't match the offset set in public Header: %d", offset, l.Header.OffsetToPointData)
 	}
 	return
 }
 
 func (l *Las) getNumberOfPDRs() (numberOFPDRs uint64) {
-	version := l.header.GetVersion()
+	version := l.Header.GetVersion()
 	if version == V1_4 {
-		numberOFPDRs = l.header.NumberOfPointRecords
+		numberOFPDRs = l.Header.NumberOfPointRecords
 	} else {
-		numberOFPDRs = uint64(l.header.LegacyNumberOfPointRecords)
+		numberOFPDRs = uint64(l.Header.LegacyNumberOfPointRecords)
 	}
 	return
 }
 
 func (l *Las) readPDRs(file *os.File) (err error) {
 	numOfPDRs := l.getNumberOfPDRs()
-	switch l.header.PointDataRecordFormat {
+	switch l.Header.PointDataRecordFormat {
 	case 0:
-		l.pdrs = make(PDR0s, numOfPDRs)
+		l.Pdrs = make(PDR0s, numOfPDRs)
 	case 1:
-		l.pdrs = make(PDR1s, numOfPDRs)
+		l.Pdrs = make(PDR1s, numOfPDRs)
 	case 2:
-		l.pdrs = make(PDR2s, numOfPDRs)
+		l.Pdrs = make(PDR2s, numOfPDRs)
 	case 3:
-		l.pdrs = make(PDR3s, numOfPDRs)
+		l.Pdrs = make(PDR3s, numOfPDRs)
 	case 4:
-		l.pdrs = make(PDR4s, numOfPDRs)
+		l.Pdrs = make(PDR4s, numOfPDRs)
 	case 5:
-		l.pdrs = make(PDR5s, numOfPDRs)
+		l.Pdrs = make(PDR5s, numOfPDRs)
 	case 6:
-		l.pdrs = make(PDR6s, numOfPDRs)
+		l.Pdrs = make(PDR6s, numOfPDRs)
 	case 7:
-		l.pdrs = make(PDR7s, numOfPDRs)
+		l.Pdrs = make(PDR7s, numOfPDRs)
 	case 8:
-		l.pdrs = make(PDR8s, numOfPDRs)
+		l.Pdrs = make(PDR8s, numOfPDRs)
 	case 9:
-		l.pdrs = make(PDR9s, numOfPDRs)
+		l.Pdrs = make(PDR9s, numOfPDRs)
 	case 10:
-		l.pdrs = make(PDR10s, numOfPDRs)
+		l.Pdrs = make(PDR10s, numOfPDRs)
 	default:
 		err = fmt.Errorf("point data record format not recognised")
 		return
 	}
-	if err = l.pdrs.read(file, int64(l.header.OffsetToPointData), uint64(l.header.PointDataRecordLength)); err != nil {
+	if err = l.Pdrs.read(file, int64(l.Header.OffsetToPointData), uint64(l.Header.PointDataRecordLength)); err != nil {
 		return
 	}
 	return
 }
 
 func (l *Las) getNumberOfEVLRs() (numberOFEVLRs uint32) {
-	version := l.header.GetVersion()
+	version := l.Header.GetVersion()
 	if version == V1_4 {
-		numberOFEVLRs = l.header.NumberOfExtendedVariableLengthRecords
+		numberOFEVLRs = l.Header.NumberOfExtendedVariableLengthRecords
 	} else {
 		numberOFEVLRs = 0
 	}
@@ -179,7 +179,7 @@ func (l *Las) getNumberOfEVLRs() (numberOFEVLRs uint32) {
 }
 
 func (l *Las) readEVLRs(file *os.File) (err error) {
-	offset := int64(l.header.StartOfFirstExtendedVariableLengthRecord)
+	offset := int64(l.Header.StartOfFirstExtendedVariableLengthRecord)
 	numberOfEVLRs := l.getNumberOfEVLRs()
 	for i := uint32(0); i < numberOfEVLRs; i++ {
 		evlr := EVLR{}
@@ -187,7 +187,7 @@ func (l *Las) readEVLRs(file *os.File) (err error) {
 		if err != nil {
 			return
 		}
-		l.evlrs = append(l.evlrs, evlr)
+		l.Evlrs = append(l.Evlrs, evlr)
 	}
 	return
 }
@@ -199,13 +199,13 @@ func (l *Las) Las2txt(outputFile string) (err error) {
 	}
 	defer file.Close()
 
-	csvList := l.pdrs.GetCSVList()
+	csvList := l.Pdrs.GetCSVList()
 
 	for _, csvOutput := range csvList {
 
-		csvOutput.X = math.Round((l.header.XOffset+csvOutput.X*l.header.XScaleFactor)*1000) / 1000
-		csvOutput.Y = math.Round((l.header.YOffset+csvOutput.Y*l.header.YScaleFactor)*1000) / 1000
-		csvOutput.Z = math.Round((l.header.ZOffset+csvOutput.Z*l.header.ZScaleFactor)*1000) / 1000
+		csvOutput.X = math.Round((l.Header.XOffset+csvOutput.X*l.Header.XScaleFactor)*1000) / 1000
+		csvOutput.Y = math.Round((l.Header.YOffset+csvOutput.Y*l.Header.YScaleFactor)*1000) / 1000
+		csvOutput.Z = math.Round((l.Header.ZOffset+csvOutput.Z*l.Header.ZScaleFactor)*1000) / 1000
 
 		if (csvOutput.R|csvOutput.G|csvOutput.B)&0xFF00 == csvOutput.R|csvOutput.G|csvOutput.B { // Checking the 8 bit channel vs 16 bit
 			csvOutput.R >>= 8
