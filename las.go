@@ -73,8 +73,13 @@ func (l *Las) WritePHB(filename string) (err error) {
 	}
 	defer file.Close()
 
-	headerInBytes := make([]byte, binary.Size(PublicHeaderBlock{}))
-	_, err = file.WriteAt(headerInBytes, 0)
+	headerInBytes := new(bytes.Buffer)
+
+	if err = binary.Write(headerInBytes, binary.LittleEndian, &l.Header); err != nil {
+		return
+	}
+
+	_, err = file.WriteAt(headerInBytes.Bytes(), 0)
 	if err != nil {
 		return
 	}
