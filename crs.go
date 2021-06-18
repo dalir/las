@@ -67,7 +67,7 @@ func (g *GeoKeyDirectoryTag) read(record []byte, offset int64) (err error) {
 //                                                                                                __/ |
 //                                                                                               |___/
 
-type GeoDoubleParamsTag map[int]float64
+type GeoDoubleParamsTag map[int64]float64
 
 func (g GeoDoubleParamsTag) read(record []byte, offset int64) (err error) {
 	for index := 0; index < len(record); index += 8 {
@@ -75,7 +75,8 @@ func (g GeoDoubleParamsTag) read(record []byte, offset int64) (err error) {
 		if err = binary.Read(bytes.NewReader(record[index:index+8]), binary.LittleEndian, &value); err != nil {
 			return
 		}
-		g[index] = value
+		g[offset] = value
+		offset += 8
 	}
 	return
 }
@@ -219,10 +220,10 @@ type ExtraBytesDescriptor struct {
 }
 
 func (e *ExtraBytes) read(record []byte, offset int64) (err error) {
-	sizeOfDescriptor := int64(binary.Size(ExtraBytesDescriptor{}))
-	for recordLocation := offset; recordLocation < int64(len(record))+offset; recordLocation += sizeOfDescriptor {
+	sizeOfDescriptor := binary.Size(ExtraBytesDescriptor{})
+	for index := 0; index < len(record); index += sizeOfDescriptor {
 		value := ExtraBytesDescriptor{}
-		if err = binary.Read(bytes.NewReader(record[recordLocation:recordLocation+sizeOfDescriptor]), binary.LittleEndian, &value); err != nil {
+		if err = binary.Read(bytes.NewReader(record[index:index+sizeOfDescriptor]), binary.LittleEndian, &value); err != nil {
 			return
 		}
 		*e = append(*e, value)
