@@ -34,7 +34,7 @@ func (l *Las) Parse(filename string) (err error) {
 	}
 	defer file.Close()
 
-	if err = l.readPHB(file); err != nil {
+	if err = l.ReadPHB(file); err != nil {
 		return
 	}
 	if err = l.readVLRs(file); err != nil {
@@ -49,7 +49,7 @@ func (l *Las) Parse(filename string) (err error) {
 	return
 }
 
-func (l *Las) readPHB(file *os.File) (err error) {
+func (l *Las) ReadPHB(file *os.File) (err error) {
 	headerInBytes := make([]byte, binary.Size(PublicHeaderBlock{}))
 	_, err = file.ReadAt(headerInBytes, 0)
 	if err != nil {
