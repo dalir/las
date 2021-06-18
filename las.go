@@ -66,6 +66,14 @@ func (l *Las) readPHB(file *os.File) (err error) {
 
 	return
 }
+func (l *Las) WritePHB(file *os.File) (err error) {
+	headerInBytes := make([]byte, binary.Size(PublicHeaderBlock{}))
+	_, err = file.WriteAt(headerInBytes, 0)
+	if err != nil {
+		return
+	}
+	return
+}
 
 func (l *Las) checkForCompliancy() (err error) {
 	if err = l.isFileLasFormat(); err != nil {
