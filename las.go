@@ -20,6 +20,14 @@ const LAS_FILE_SIGNATURE = "LASF"
 //
 //
 
+// The format contains binary data consisting of a public header block, any number of (optional) Variable Length Records
+// (VLRs), the Point Data Records, and any number of (optional) Extended Variable Length Records (EVLRs). All data are
+// in little-endian format. The public header block contains generic data such as point numbers and point data bounds.
+// We refer to the data content of the file as the “payload.” The Variable Length Records (VLRs) contain variable types
+// of data including projection information, metadata, waveform packet information, and user application data. They are
+// limited to a data payload of 65,535 bytes. The Extended Variable Length Records (EVLRs) allow a higher payload than
+// VLRs and have the advantage that they can be appended to the end of a LAS file. This allows, for example, adding
+// projection information to a LAS file without having to rewrite the entire file.
 type Las struct {
 	Header PublicHeaderBlock
 	Vlrs   []VLR
