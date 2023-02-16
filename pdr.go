@@ -45,6 +45,8 @@ const (
 	PDR0_EDGE_OF_FLIGHT_LINE_MASK = 0x80
 )
 
+type ClassAttribute uint8
+
 const (
 	Created_NeverClassified ClassAttribute = iota
 	Uncalassified
@@ -56,16 +58,20 @@ const (
 	Low_Point
 	Model_Key_Point
 	Water
-	Reserved10
-	Reserved11
+	Rail
+	RoadSurface
 	Overlap_Points
+	Wire_Guard
+	Wire_Conductor
+	Transmission_Tower
+	Wire_Structure_Connector
+	Bridge_Deck
+	High_Noise
+	Overhead_Structure
+	Ignored_Ground
+	Snow
+	Temporal_Exclusion
 )
-
-type ClassAttribute uint8
-
-func (ca ClassAttribute) getValue(value ClassAttribute) {
-	value = ClassAttribute(uint8(ca) & 0x0F)
-}
 
 type Format0 struct {
 	X              int32
@@ -98,6 +104,28 @@ func (f0 *Format0) GetScanDirectionFlag() uint8 {
 
 func (f0 *Format0) GetEdgeOfFlightLine() uint8 {
 	return (f0.Pulse & PDR0_EDGE_OF_FLIGHT_LINE_MASK) >> 7
+}
+
+func (f0 *Format0) GetClassAttribute() ClassAttribute {
+	return ClassAttribute(uint8(f0.Classification) & 0x1F)
+}
+
+// IsSynthetic if set, this point was created by a technique other than direct observation such as digitized from a photogrammetric
+// stereo model or by traversing a waveform. Point attribute interpretation might differ from non-Synthetic points.
+// Unused attributes must be set to the appropriate default value.
+func (f0 *Format0) IsSynthetic() bool {
+	return (uint8(f0.Classification) & 0x20) != 0
+}
+
+// IsKeyPoint if set, this point is considered to be a model keypoint and therefore generally should not be withheld in a
+// thinning algorithm.
+func (f0 *Format0) IsKeyPoint() bool {
+	return (uint8(f0.Classification) & 0x40) != 0
+}
+
+// IsWithheld if set, this point should not be included in processing (synonymous with Deleted).
+func (f0 *Format0) IsWithheld() bool {
+	return (uint8(f0.Classification) & 0x80) != 0
 }
 
 type PDR0s []PDR0
@@ -498,6 +526,28 @@ func (f6 *Format6) GetScanDirectionFlag() uint8 {
 
 func (f6 *Format6) GetEdgeOfFlightLine() uint8 {
 	return (f6.PulseFlags & PDR6_EDGE_OF_FLIGHT_LINE_MASK) >> 2
+}
+
+func (f6 *Format6) GetClassAttribute() ClassAttribute {
+	return ClassAttribute(uint8(f6.Classification) & 0x1F)
+}
+
+// IsSynthetic if set, this point was created by a technique other than direct observation such as digitized from a photogrammetric
+// stereo model or by traversing a waveform. Point attribute interpretation might differ from non-Synthetic points.
+// Unused attributes must be set to the appropriate default value.
+func (f6 *Format6) IsSynthetic() bool {
+	return (uint8(f6.Classification) & 0x20) != 0
+}
+
+// IsKeyPoint if set, this point is considered to be a model keypoint and therefore generally should not be withheld in a
+// thinning algorithm.
+func (f6 *Format6) IsKeyPoint() bool {
+	return (uint8(f6.Classification) & 0x40) != 0
+}
+
+// IsWithheld if set, this point should not be included in processing (synonymous with Deleted).
+func (f6 *Format6) IsWithheld() bool {
+	return (uint8(f6.Classification) & 0x80) != 0
 }
 
 type PDR6s []PDR6
