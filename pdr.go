@@ -39,10 +39,14 @@ type XYZRGB struct {
 //
 
 const (
-	PDR0_RETURN_NUMBER_MASK       = 0x07
-	PDR0_NUMBER_OF_RETURNS_MASK   = 0x38
-	PDR0_SCAN_DIRECTION_FLAG_MASK = 0x40
-	PDR0_EDGE_OF_FLIGHT_LINE_MASK = 0x80
+	PDR0_RETURN_NUMBER_MASK            = 0x07
+	PDR0_NUMBER_OF_RETURNS_MASK        = 0x38
+	PDR0_SCAN_DIRECTION_FLAG_MASK      = 0x40
+	PDR0_EDGE_OF_FLIGHT_LINE_MASK      = 0x80
+	PDR0_CLASSIFICATION_ATTRIBUTE_MASK = 0x1F
+	PDR0_CLASSIFICATION_SYNTHETIC_MASK = 0x20
+	PDR0_CLASSIFICATION_KEYPOINT_MASK  = 0x40
+	PDR0_CLASSIFICATION_WITHHELD_MASK  = 0x80
 )
 
 type ClassAttribute uint8
@@ -107,25 +111,25 @@ func (f0 *Format0) GetEdgeOfFlightLine() uint8 {
 }
 
 func (f0 *Format0) GetClassAttribute() ClassAttribute {
-	return ClassAttribute(uint8(f0.Classification) & 0x1F)
+	return ClassAttribute(uint8(f0.Classification) & PDR0_CLASSIFICATION_ATTRIBUTE_MASK)
 }
 
 // IsSynthetic if set, this point was created by a technique other than direct observation such as digitized from a photogrammetric
 // stereo model or by traversing a waveform. Point attribute interpretation might differ from non-Synthetic points.
 // Unused attributes must be set to the appropriate default value.
 func (f0 *Format0) IsSynthetic() bool {
-	return (uint8(f0.Classification) & 0x20) != 0
+	return (uint8(f0.Classification) & PDR0_CLASSIFICATION_SYNTHETIC_MASK) != 0
 }
 
 // IsKeyPoint if set, this point is considered to be a model keypoint and therefore generally should not be withheld in a
 // thinning algorithm.
 func (f0 *Format0) IsKeyPoint() bool {
-	return (uint8(f0.Classification) & 0x40) != 0
+	return (uint8(f0.Classification) & PDR0_CLASSIFICATION_KEYPOINT_MASK) != 0
 }
 
 // IsWithheld if set, this point should not be included in processing (synonymous with Deleted).
 func (f0 *Format0) IsWithheld() bool {
-	return (uint8(f0.Classification) & 0x80) != 0
+	return (uint8(f0.Classification) & PDR0_CLASSIFICATION_WITHHELD_MASK) != 0
 }
 
 type PDR0s []PDR0
@@ -482,11 +486,15 @@ func (p5 PDR5s) GetCSVList() (output []*XYZRGB) {
 //
 
 const (
-	PDR6_RETURN_NUMBER_MASK        = 0x0F
-	PDR6_NUMBER_OF_RETURNS_MASK    = 0xF0
-	PDR6_CLASSIFICATION_FLAGS_MASK = 0x0F
-	PDR6_SCAN_DIRECTION_FLAG_MASK  = 0x03
-	PDR6_EDGE_OF_FLIGHT_LINE_MASK  = 0x0C
+	PDR6_RETURN_NUMBER_MASK            = 0x0F
+	PDR6_NUMBER_OF_RETURNS_MASK        = 0xF0
+	PDR6_CLASSIFICATION_FLAGS_MASK     = 0x0F
+	PDR6_SCAN_DIRECTION_FLAG_MASK      = 0x03
+	PDR6_EDGE_OF_FLIGHT_LINE_MASK      = 0x0C
+	PDR6_CLASSIFICATION_ATTRIBUTE_MASK = 0x1F
+	PDR6_CLASSIFICATION_SYNTHETIC_MASK = 0x20
+	PDR6_CLASSIFICATION_KEYPOINT_MASK  = 0x40
+	PDR6_CLASSIFICATION_WITHHELD_MASK  = 0x80
 )
 
 type Format6 struct {
@@ -529,25 +537,25 @@ func (f6 *Format6) GetEdgeOfFlightLine() uint8 {
 }
 
 func (f6 *Format6) GetClassAttribute() ClassAttribute {
-	return ClassAttribute(uint8(f6.Classification) & 0x1F)
+	return ClassAttribute(uint8(f6.Classification) & PDR6_CLASSIFICATION_ATTRIBUTE_MASK)
 }
 
 // IsSynthetic if set, this point was created by a technique other than direct observation such as digitized from a photogrammetric
 // stereo model or by traversing a waveform. Point attribute interpretation might differ from non-Synthetic points.
 // Unused attributes must be set to the appropriate default value.
 func (f6 *Format6) IsSynthetic() bool {
-	return (uint8(f6.Classification) & 0x20) != 0
+	return (uint8(f6.Classification) & PDR6_CLASSIFICATION_SYNTHETIC_MASK) != 0
 }
 
 // IsKeyPoint if set, this point is considered to be a model keypoint and therefore generally should not be withheld in a
 // thinning algorithm.
 func (f6 *Format6) IsKeyPoint() bool {
-	return (uint8(f6.Classification) & 0x40) != 0
+	return (uint8(f6.Classification) & PDR6_CLASSIFICATION_KEYPOINT_MASK) != 0
 }
 
 // IsWithheld if set, this point should not be included in processing (synonymous with Deleted).
 func (f6 *Format6) IsWithheld() bool {
-	return (uint8(f6.Classification) & 0x80) != 0
+	return (uint8(f6.Classification) & PDR6_CLASSIFICATION_WITHHELD_MASK) != 0
 }
 
 type PDR6s []PDR6
